@@ -22,21 +22,27 @@ const logConnection = async (req, res) => {
     const response_time_ms = Date.now() - startTime;
     const status_code = 200; // Assuming success if we reach here
 
+    // Get user details from authenticated request
+    const user_id = req.user ? req.user.id.toString() : null;
+    const user_email = req.user ? req.user.name : null; // Mapping name to user_email as per instructions
+
     const insertQuery = `
       INSERT INTO audit_logs (
-        method, endpoint, status_code, ip_address, user_agent, 
+        user_id, user_email, method, endpoint, status_code, ip_address, user_agent, 
         headers, query_params, request_body, response_time_ms
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *;
     `;
     
     const values = [
+      user_id,
+      user_email,
       method,
       endpoint,
       status_code,
       ip_address,
       user_agent,
-      headers,      // pg module automatically parses objects into JSON
+      headers,
       query_params,
       request_body,
       response_time_ms
