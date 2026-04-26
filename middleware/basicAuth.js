@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const pool = require('../config/db');
+const memoryCache = require('../config/memoryCache');
 
 const basicAuth = async (req, res, next) => {
   // Check for Authorization header
@@ -14,6 +15,14 @@ const basicAuth = async (req, res, next) => {
   try {
     // Extract credentials from basic auth header
     const base64Credentials = authHeader.split(' ')[1];
+
+    // Check memory cache first to avoid hammering the database on every request
+    const cachedUser = memoryCache.get(`auth_${base64Credentials}`);
+    if (cachedUser) {
+      req.user = cachedUser;
+      return next();
+    }
+
     const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
     const [name, password] = credentials.split(':');
 
@@ -36,6 +45,9 @@ const basicAuth = async (req, res, next) => {
         message: 'Invalid password. Please try again or register at /api/v1/register'
       });
     }
+
+    // Cache the valid user for 5 minutes to bypass DB for subsequent requests
+    memoryCache.set(`auth_${base64Credentials}`, user, 300);
 
     // Pass user to request so we can use it in endpoints
     req.user = user;

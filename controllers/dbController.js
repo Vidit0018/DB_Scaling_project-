@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const memoryCache = require('../config/memoryCache');
 
 const logConnection = async (req, res) => {
   const startTime = Date.now();
@@ -110,6 +111,16 @@ const getTrips = async (req, res) => {
 
 const getUniquenessStats = async (req, res) => {
   try {
+    const cacheKey = 'uniquenessStats';
+    const cachedData = memoryCache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        source: 'cache',
+        data: cachedData
+      });
+    }
+
     const query = `
       WITH total AS (
           SELECT NULLIF(COUNT(*), 0) AS total_rows FROM trips
@@ -137,8 +148,13 @@ const getUniquenessStats = async (req, res) => {
       FROM total;
     `;
     const result = await pool.query(query);
+    
+    // Cache for 60 seconds
+    memoryCache.set(cacheKey, result.rows[0], 60);
+
     res.status(200).json({
       success: true,
+      source: 'database',
       data: result.rows[0]
     });
   } catch (error) {
@@ -238,6 +254,17 @@ const searchTrips = async (req, res) => {
 
 const getComplexTripStats = async (req, res) => {
   try {
+    const cacheKey = 'complexTripStats';
+    const cachedData = memoryCache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        source: 'cache',
+        count: cachedData.length,
+        data: cachedData
+      });
+    }
+
     const query = `
       SELECT 
           DATE(t1.tpep_pickup_datetime) AS trip_date,
@@ -258,8 +285,13 @@ const getComplexTripStats = async (req, res) => {
       ORDER BY avg_fare DESC;
     `;
     const result = await pool.query(query);
+    
+    // Cache for 60 seconds
+    memoryCache.set(cacheKey, result.rows, 60);
+
     res.status(200).json({
       success: true,
+      source: 'database',
       count: result.rowCount,
       data: result.rows
     });
@@ -305,9 +337,26 @@ const getAnalytics = async (req, res) => {
   }
 
   try {
+    const cacheKey = `analytics:${reportName}`;
+    const cachedData = memoryCache.get(cacheKey);
+    
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        source: 'cache',
+        count: cachedData.length,
+        data: cachedData
+      });
+    }
+
     const result = await pool.query(query);
+    
+    // Cache for 60 seconds
+    memoryCache.set(cacheKey, result.rows, 60);
+
     res.status(200).json({
       success: true,
+      source: 'database',
       count: result.rowCount,
       data: result.rows
     });
