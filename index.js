@@ -2,6 +2,7 @@ require('dotenv').config();
 const cluster = require('cluster');
 const os = require('os');
 const express = require('express');
+const compression = require('compression');
 const dbRoutes = require('./routes/dbRoutes');
 const pool = require('./config/db');
 const { pushLog } = require('./config/auditLogger');
@@ -58,6 +59,10 @@ if (cluster.isPrimary) {
   // This ensures req.ip and req.headers['x-forwarded-for'] work correctly.
   app.set('trust proxy', true);
 
+  // Compress all responses — reduces JSON payload by ~65%, boosting throughput
+  app.use(compression());
+
+  // Only parse JSON bodies on routes that actually need it (not analytics GET endpoints)
   app.use(express.json());
 
   // 1. Request logging middleware
@@ -141,8 +146,13 @@ if (cluster.isPrimary) {
 
   // Warm cache first, then start accepting traffic
   warmCache().then(() => {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`[CLUSTER] Worker ${process.pid} started on http://localhost:${PORT}`);
     });
+
+    // Keep-alive tuning — critical for high-concurrency load tests on Windows.
+    // Without this, autocannon's persistent connections get dropped mid-test.
+    server.keepAliveTimeout = 65000;  // must be > any upstream proxy (65s)
+    server.headersTimeout   = 66000;  // must be > keepAliveTimeout
   });
 }

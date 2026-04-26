@@ -331,34 +331,36 @@ const analyticsQueries = {
 const getAnalytics = async (req, res) => {
   const { reportName } = req.params;
   const query = analyticsQueries[reportName];
-  
+
   if (!query) {
     return res.status(404).json({ success: false, message: 'Analytics report not found. Available reports: ' + Object.keys(analyticsQueries).join(', ') });
   }
 
   try {
     const cacheKey = `analytics:${reportName}`;
-    const cachedData = memoryCache.get(cacheKey);
-    
-    if (cachedData) {
-      return res.status(200).json({
-        success: true,
-        source: 'cache',
-        count: cachedData.length,
-        data: cachedData
-      });
+    const TTL = 3600; // 1 hour — historical taxi data never changes
+
+    // getOrFetch deduplicates concurrent cache misses: only 1 DB query fires
+    // even if 500 requests arrive at the same millisecond on a cold cache.
+    const rows = await memoryCache.getOrFetch(cacheKey, TTL, async () => {
+      const result = await pool.query(query);
+      return result.rows;
+    });
+
+    // HTTP-level caching: allow clients / CDNs to cache and return 304s
+    const etag = `"${reportName}-${rows.length}"`;
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.set('ETag', etag);
+
+    if (req.headers['if-none-match'] === etag) {
+      return res.status(304).end();
     }
 
-    const result = await pool.query(query);
-    
-    // Cache for 60 seconds
-    memoryCache.set(cacheKey, result.rows, 60);
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      source: 'database',
-      count: result.rowCount,
-      data: result.rows
+      source: memoryCache.get(cacheKey) !== null ? 'cache' : 'database',
+      count: rows.length,
+      data: rows
     });
   } catch (error) {
     console.error(`Error fetching analytics for ${reportName}:`, error);
