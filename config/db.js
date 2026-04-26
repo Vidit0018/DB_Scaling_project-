@@ -3,6 +3,12 @@ require('dotenv').config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  statement_timeout: 20000 // Automatically cancel queries that take longer than 20s
+});
+
+// Catch errors on idle clients to prevent the Node.js process from crashing
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err.message);
 });
 
 // Test the connection and initialize tables

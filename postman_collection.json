@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "DB Scaling Analytics Endpoints",
+    "description": "A collection containing all 20 dynamic analytics endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "password",
+        "value": "1234",
+        "type": "string"
+      },
+      {
+        "key": "username",
+        "value": "saswat",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    { "name": "1. Date Range", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/date-range" } },
+    { "name": "2. Trips per Day", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/trips-per-day" } },
+    { "name": "3. Peak Hours", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/peak-hours" } },
+    { "name": "4. Revenue Analysis", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/revenue-analysis" } },
+    { "name": "5. Revenue by Hour", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/revenue-by-hour" } },
+    { "name": "6. Passenger Distribution", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/passenger-distribution" } },
+    { "name": "7. Trip Distance Analysis", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/trip-distance-analysis" } },
+    { "name": "8. Payment Type Usage", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/payment-type-usage" } },
+    { "name": "9. Tip Behavior", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/tip-behavior" } },
+    { "name": "10. Common Pickup Locations", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/common-pickup-locations" } },
+    { "name": "11. Common Routes", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/common-routes" } },
+    { "name": "12. Longest Trips", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/longest-trips" } },
+    { "name": "13. Efficiency", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/efficiency" } },
+    { "name": "14. Detect Anomalies", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/detect-anomalies" } },
+    { "name": "15. Daily Revenue Trend", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/daily-revenue-trend" } },
+    { "name": "16. High Value Trips", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/high-value-trips" } },
+    { "name": "17. Correlation Insight", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/correlation-insight" } },
+    { "name": "18. Data Quality Check", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/data-quality-check" } },
+    { "name": "19. Composite Insight", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/composite-insight" } },
+    { "name": "20. Advanced Moving Avg", "request": { "method": "GET", "url": "http://localhost:3000/api/v1/analytics/advanced-moving-avg" } }
+  ]
+}
