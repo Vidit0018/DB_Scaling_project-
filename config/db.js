@@ -1,9 +1,18 @@
 const { Pool } = require('pg');
+const os = require('os');
 require('dotenv').config();
+
+// Cap total connections across all cluster workers within Neon free-tier limit (~30).
+// Each worker gets an equal share: floor(20 / numCPUs), minimum 2.
+const numCPUs = os.cpus().length;
+const poolMax = Math.max(2, Math.floor(20 / numCPUs));
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  statement_timeout: 20000 // Automatically cancel queries that take longer than 20s
+  max: poolMax,
+  idleTimeoutMillis: 30000,       // Release idle connections after 30s
+  connectionTimeoutMillis: 5000,  // Fail fast if DB is unreachable
+  statement_timeout: 20000,       // Cancel runaway queries after 20s
 });
 
 // Catch errors on idle clients to prevent the Node.js process from crashing
