@@ -74,25 +74,25 @@ if (cluster.isPrimary) {
       if (res.statusCode >= 400) {
         console.error(`[ERROR] Completed request: ${req.method} ${req.originalUrl} - Status: ${res.statusCode} - ${duration}ms`);
       }
-      
+
       const user_id = req.user ? req.user.id?.toString() : null;
       const user_email = req.user ? req.user.name : null;
       const ip_address = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
-      
-      // Disabled for ultra-high scale 50k RPS load testing to prevent DB and memory overload
-      // pushLog({
-      //   user_id,
-      //   user_email,
-      //   method: req.method,
-      //   endpoint: req.originalUrl || req.url,
-      //   status_code: res.statusCode,
-      //   ip_address,
-      //   user_agent: req.headers['user-agent'],
-      //   headers: req.headers,
-      //   query_params: req.query,
-      //   request_body: req.body,
-      //   response_time_ms: duration
-      // });
+
+
+      pushLog({
+        user_id,
+        user_email,
+        method: req.method,
+        endpoint: req.originalUrl || req.url,
+        status_code: res.statusCode,
+        ip_address,
+        user_agent: req.headers['user-agent'],
+        headers: req.headers,
+        query_params: req.query,
+        request_body: req.body,
+        response_time_ms: duration
+      });
     });
     next();
   });
@@ -101,7 +101,7 @@ if (cluster.isPrimary) {
   app.use((req, res, next) => {
     const timeoutMs = 20000;
     let isResponded = false;
-    
+
     const timer = setTimeout(() => {
       if (!res.headersSent) {
         console.error(`[TIMEOUT ERROR] ${req.method} ${req.originalUrl} timed out after ${timeoutMs}ms`);
@@ -116,12 +116,12 @@ if (cluster.isPrimary) {
     // Patch res.json and res.send to prevent "Cannot set headers after they are sent" crash
     // when a background query finally resolves after the timeout has responded.
     const originalJson = res.json;
-    res.json = function(body) {
+    res.json = function (body) {
       if (res.headersSent || isResponded) return this;
       return originalJson.call(this, body);
     };
     const originalSend = res.send;
-    res.send = function(body) {
+    res.send = function (body) {
       if (res.headersSent || isResponded) return this;
       return originalSend.call(this, body);
     };
@@ -153,6 +153,6 @@ if (cluster.isPrimary) {
     // Keep-alive tuning — critical for high-concurrency load tests on Windows.
     // Without this, autocannon's persistent connections get dropped mid-test.
     server.keepAliveTimeout = 65000;  // must be > any upstream proxy (65s)
-    server.headersTimeout   = 66000;  // must be > keepAliveTimeout
+    server.headersTimeout = 66000;  // must be > keepAliveTimeout
   });
 }
